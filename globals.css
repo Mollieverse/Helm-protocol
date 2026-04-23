@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Fonts ─────────────────────────────────────────────────────────────────── */
+:root {
+  --font-geist:      'DM Sans', system-ui, sans-serif;
+  --font-geist-mono: 'Space Mono', monospace;
+
+  /* Custom scrollbar */
+  --scrollbar-bg:    #161B22;
+  --scrollbar-thumb: #30363D;
+}
+
+/* ── Base ───────────────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+
+html, body {
+  min-height: 100%;
+  background: #0D1117;
+  font-family: var(--font-geist);
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-bg); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 2px; }
+
+/* ── Utility classes ────────────────────────────────────────────────────────── */
+@layer utilities {
+  .font-mono { font-family: var(--font-geist-mono); }
+
+  /* Glass card */
+  .glass {
+    background:    rgba(22, 27, 34, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(48, 54, 61, 0.6);
+  }
+
+  /* Glow effects */
+  .glow-purple { box-shadow: 0 0 20px rgba(108, 92, 231, 0.25); }
+  .glow-green  { box-shadow: 0 0 20px rgba(0, 255, 163, 0.20); }
+  .glow-blue   { box-shadow: 0 0 20px rgba(0, 194, 255, 0.20); }
+
+  /* Text glow */
+  .text-glow-purple { text-shadow: 0 0 20px rgba(108, 92, 231, 0.6); }
+  .text-glow-green  { text-shadow: 0 0 20px rgba(0, 255, 163, 0.5); }
+
+  /* Grid background */
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(108,92,231,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(108,92,231,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}
+
+/* ── Wallet Adapter Overrides ───────────────────────────────────────────────── */
+.wallet-adapter-button {
+  background: linear-gradient(135deg, #6C5CE7, #5a4cc7) !important;
+  border-radius: 8px !important;
+  font-family: var(--font-geist) !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  height: 40px !important;
+  padding: 0 20px !important;
+  transition: all 0.2s !important;
+}
+
+.wallet-adapter-button:hover {
+  background: linear-gradient(135deg, #7d6ef5, #6C5CE7) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 20px rgba(108, 92, 231, 0.4) !important;
+}
+
+.wallet-adapter-modal-wrapper {
+  background: #161B22 !important;
+  border: 1px solid #30363D !important;
+  border-radius: 16px !important;
+}
+
+.wallet-adapter-modal-title {
+  color: #E6EDF3 !important;
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0)    0%,
+    rgba(255,255,255,0.04) 50%,
+    rgba(255,255,255,0)    100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.status-pulse { animation: statusPulse 2s ease-in-out infinite; }
+
+/* ── Sparkline SVG ──────────────────────────────────────────────────────────── */
+.sparkline-path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawLine 1.5s ease-out forwards;
+}
+
+@keyframes drawLine {
+  to { stroke-dashoffset: 0; }
+}
