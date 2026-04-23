@@ -1,32 +1,32 @@
 import { NextResponse } from 'next/server';
 
-// ─── Simple mock price API ────────────────────────────────────────────────────
-// In production, replace with: https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd
+const PRICE_URL =
+  'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd&include_24hr_change=true';
+const HISTORY_URL =
+  'https://api.coingecko.com/api/v3/coins/solana/market_chart?vs_currency=usd&days=1&interval=hourly';
 
-let basePrice = 148.5;
-let lastFetch = 0;
-let cachedPrice = basePrice;
-let history: number[] = Array.from({ length: 20 }, (_, i) =>
-  basePrice + (Math.random() - 0.5) * 10,
-);
+let cache: { current: number; change24h: number; history: number[]; ts: number } | null = null;
+const TTL = 30_000;
 
 export async function GET() {
   const now = Date.now();
-
-  // Throttle: only update every 5 s to simulate live feed
-  if (now - lastFetch > 5_000) {
-    // Random walk: ±0.8%
-    const delta = cachedPrice * (Math.random() - 0.5) * 0.016;
-    cachedPrice = Math.max(50, cachedPrice + delta);
-    history = [...history.slice(1), cachedPrice];
-    lastFetch = now;
+  if (cache && now - cache.ts < TTL) {
+    return NextResponse.json({ current: cache.current, change24h: cache.change24h, history: cache.history });
   }
-
-  const change24h = ((cachedPrice - basePrice) / basePrice) * 100;
-
-  return NextResponse.json({
-    current:   parseFloat(cachedPrice.toFixed(2)),
-    change24h: parseFloat(change24h.toFixed(2)),
-    history,
-  });
+  try {
+    const [pr, hr] = await Promise.all([
+      fetch(PRICE_URL,   { next: { revalidate: 30 } }),
+      fetch(HISTORY_URL, { next: { revalidate: 30 } }),
+    ]);
+    const pd = await pr.json();
+    const hd = await hr.json();
+    const current   = pd.solana.usd as number;
+    const change24h = pd.solana.usd_24h_change as number;
+    const history   = ((hd.prices as [number, number][]) ?? []).slice(-24).map(([, p]) => parseFloat(p.toFixed(2)));
+    cache = { current, change24h, history, ts: now };
+    return NextResponse.json({ current: parseFloat(current.toFixed(2)), change24h: parseFloat(change24h.toFixed(2)), history });
+  } catch {
+    if (cache) return NextResponse.json({ current: cache.current, change24h: cache.change24h, history: cache.history });
+    return NextResponse.json({ current: 148.5, change24h: 0, history: Array.from({ length: 24 }, () => 148.5) });
+  }
 }
