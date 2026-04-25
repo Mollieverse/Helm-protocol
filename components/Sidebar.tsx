@@ -9,10 +9,10 @@ interface Props {
 }
 
 const NAV_ITEMS = [
-  { id: 'home',     label: 'Dashboard',  Icon: Home      },
-  { id: 'agents',   label: 'Agents',     Icon: Bot       },
-  { id: 'market',   label: 'Market',     Icon: BarChart2 },
-  { id: 'settings', label: 'Settings',   Icon: Settings  },
+  { id: 'home',     label: 'Dashboard', Icon: Home      },
+  { id: 'agents',   label: 'Agents',    Icon: Bot       },
+  { id: 'market',   label: 'Market',    Icon: BarChart2 },
+  { id: 'settings', label: 'Settings',  Icon: Settings  },
 ] as const;
 
 export function Sidebar({ activeTab, onTabChange, agentCount }: Props) {
@@ -27,8 +27,8 @@ export function Sidebar({ activeTab, onTabChange, agentCount }: Props) {
             <Zap className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="font-bold text-sm leading-tight">AutoPilot</p>
-            <p className="text-xs text-muted leading-tight">Wallet Agent</p>
+            <p className="font-bold text-sm leading-tight">HELM</p>
+            <p className="text-xs text-muted leading-tight">Intent Execution</p>
           </div>
         </div>
       </div>
@@ -42,7 +42,9 @@ export function Sidebar({ activeTab, onTabChange, agentCount }: Props) {
         </div>
         <div className="mt-1.5 flex items-center gap-2">
           <span className="text-xs text-muted">Active agents</span>
-          <span className="ml-auto font-mono text-xs font-bold text-text">{agentCount}</span>
+          <span className="ml-auto font-mono text-xs font-bold text-text">
+            {agentCount}
+          </span>
         </div>
       </div>
 
@@ -54,8 +56,8 @@ export function Sidebar({ activeTab, onTabChange, agentCount }: Props) {
             <button
               key={id}
               onClick={() => onTabChange(id)}
-              className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm
-                          font-medium transition-all duration-150 text-left
+              className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl
+                          text-sm font-medium transition-all duration-150 text-left
                 ${active
                   ? 'bg-primary/15 text-primary border border-primary/20'
                   : 'text-muted hover:text-text hover:bg-card-2'
@@ -64,8 +66,8 @@ export function Sidebar({ activeTab, onTabChange, agentCount }: Props) {
               <Icon className="w-4 h-4 flex-shrink-0" />
               <span>{label}</span>
               {id === 'agents' && agentCount > 0 && (
-                <span className="ml-auto text-xs font-mono bg-primary/20 text-primary
-                                 px-1.5 py-0.5 rounded-full">
+                <span className="ml-auto text-xs font-mono bg-primary/20
+                                 text-primary px-1.5 py-0.5 rounded-full">
                   {agentCount}
                 </span>
               )}
