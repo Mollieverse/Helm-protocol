@@ -4,23 +4,42 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
 import { WalletToken } from '@/lib/types';
 
-// Jupiter token list — covers most Solana tokens including meme coins
-const JUPITER_TOKEN_LIST = 'https://token.jup.ag/all';
-// Jupiter price API — works for ANY SPL token by mint
-const JUPITER_PRICE_API  = 'https://price.jup.ag/v6/price?ids=';
+// Jupiter token list — covers every Solana token including meme coins
+const JUPITER_TOKEN_LIST  = 'https://token.jup.ag/all';
+// Jupiter CDN for logos — works for any mint
+const JUPITER_LOGO        = (mint: string) => `https://img.jup.ag/tokens/${mint}`;
+// Jupiter price API
+const JUPITER_PRICE_API   = 'https://price.jup.ag/v6/price?ids=';
 
-// Cache token metadata so we don't re-fetch every time
-let tokenListCache: Record<string, { symbol: string; name: string; logoURI?: string }> | null = null;
+// Cache token metadata globally so we only fetch once per session
+let tokenListCache: Record<string, {
+  symbol:   string;
+  name:     string;
+  logoURI?: string;
+}> | null = null;
 
-async function getTokenMetadata(mint: string): Promise<{ symbol: string; name: string; logo?: string }> {
+async function getTokenMetadata(mint: string): Promise<{
+  symbol: string;
+  name:   string;
+  logo?:  string;
+}> {
   // Load Jupiter token list once
   if (!tokenListCache) {
     try {
       const res  = await fetch(JUPITER_TOKEN_LIST);
-      const list = await res.json() as Array<{ address: string; symbol: string; name: string; logoURI?: string }>;
+      const list = await res.json() as Array<{
+        address:  string;
+        symbol:   string;
+        name:     string;
+        logoURI?: string;
+      }>;
       tokenListCache = {};
       for (const t of list) {
-        tokenListCache[t.address] = { symbol: t.symbol, name: t.name, logoURI: t.logoURI };
+        tokenListCache[t.address] = {
+          symbol:   t.symbol,
+          name:     t.name,
+          logoURI:  t.logoURI,
+        };
       }
     } catch {
       tokenListCache = {};
@@ -28,18 +47,27 @@ async function getTokenMetadata(mint: string): Promise<{ symbol: string; name: s
   }
 
   const meta = tokenListCache[mint];
+
   if (meta) {
-    return { symbol: meta.symbol, name: meta.name, logo: meta.logoURI };
+    return {
+      symbol: meta.symbol,
+      name:   meta.name,
+      // Use Jupiter CDN first — most reliable source for logos
+      logo:   JUPITER_LOGO(mint),
+    };
   }
 
-  // Unknown token — show shortened mint
+  // Unknown token — use Jupiter CDN anyway (may still have logo)
   return {
     symbol: `${mint.slice(0, 4)}...`,
-    name:   `Unknown (${mint.slice(0, 8)}...)`,
+    name:   `Unknown Token`,
+    logo:   JUPITER_LOGO(mint),
   };
 }
 
-async function getTokenPrices(mints: string[]): Promise<Record<string, number>> {
+async function getTokenPrices(
+  mints: string[],
+): Promise<Record<string, number>> {
   if (!mints.length) return {};
   try {
     const res  = await fetch(`${JUPITER_PRICE_API}${mints.join(',')}`);
@@ -70,31 +98,44 @@ export function useWalletTokens() {
   }, []);
 
   const fetchTokens = useCallback(async () => {
-    if (!publicKey || !connected) { setTokens([]); return; }
+    if (!publicKey || !connected) {
+      setTokens([]);
+      return;
+    }
     setLoading(true);
 
     try {
-      // 1. Get all SPL token accounts
+      // Get all SPL token accounts
       const accounts = await connection.getParsedTokenAccountsByOwner(
         publicKey,
-        { programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') },
+        {
+          programId: new PublicKey(
+            'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+          ),
+        },
       );
 
-      // 2. Filter tokens with balance > 0
+      // Filter tokens with balance > 0
       const nonZero = accounts.value
         .map(a => {
           const info = a.account.data.parsed.info;
           return {
             mint:    info.mint as string,
-            balance: parseFloat(info.tokenAmount.uiAmountString ?? '0'),
+            balance: parseFloat(
+              info.tokenAmount.uiAmountString ?? '0',
+            ),
           };
         })
         .filter(t => t.balance > 0);
 
       if (!mountedRef.current) return;
-      if (nonZero.length === 0) { setTokens([]); setLoading(false); return; }
+      if (nonZero.length === 0) {
+        setTokens([]);
+        setLoading(false);
+        return;
+      }
 
-      // 3. Fetch metadata + prices in parallel
+      // Fetch metadata and prices in parallel
       const [metaResults, prices] = await Promise.all([
         Promise.all(nonZero.map(t => getTokenMetadata(t.mint))),
         getTokenPrices(nonZero.map(t => t.mint)),
@@ -111,12 +152,11 @@ export function useWalletTokens() {
         price:   prices[t.mint],
       }));
 
-      // Sort: known tokens first, then by balance descending
+      // Sort by USD value descending
       result.sort((a, b) => {
-        const aKnown = !a.symbol.includes('...');
-        const bKnown = !b.symbol.includes('...');
-        if (aKnown !== bKnown) return aKnown ? -1 : 1;
-        return (b.balance * (b.price ?? 0)) - (a.balance * (a.price ?? 0));
+        const aVal = (a.balance ?? 0) * (a.price ?? 0);
+        const bVal = (b.balance ?? 0) * (b.price ?? 0);
+        return bVal - aVal;
       });
 
       setTokens(result);
@@ -132,4 +172,4 @@ export function useWalletTokens() {
   }, [fetchTokens]);
 
   return { tokens, loading, refresh: fetchTokens };
-                                  }
+}
