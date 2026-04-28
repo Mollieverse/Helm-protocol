@@ -1,5 +1,5 @@
 'use client';
-import { Home, Bot, BarChart2, Settings } from 'lucide-react';
+import { Home, Layers, PieChart, BarChart2, Settings } from 'lucide-react';
 
 interface Props {
   activeTab:   string;
@@ -7,10 +7,11 @@ interface Props {
 }
 
 const TABS = [
-  { id: 'home',     label: 'Home',     Icon: Home      },
-  { id: 'agents',   label: 'Agents',   Icon: Bot       },
-  { id: 'market',   label: 'Market',   Icon: BarChart2 },
-  { id: 'settings', label: 'Settings', Icon: Settings  },
+  { id: 'home',      label: 'Home',      Icon: Home      },
+  { id: 'intents',   label: 'Intents',   Icon: Layers    },
+  { id: 'portfolio', label: 'Portfolio', Icon: PieChart  },
+  { id: 'market',    label: 'Market',    Icon: BarChart2 },
+  { id: 'settings',  label: 'Settings',  Icon: Settings  },
 ] as const;
 
 export function BottomNav({ activeTab, onTabChange }: Props) {
@@ -35,7 +36,7 @@ export function BottomNav({ activeTab, onTabChange }: Props) {
                                    w-1 h-1 rounded-full bg-primary" />
                 )}
               </div>
-              <span className={`text-[10px] font-semibold tracking-wide uppercase
+              <span className={`text-[9px] font-semibold tracking-wide uppercase
                 ${active ? 'text-primary' : 'text-muted'}`}>
                 {label}
               </span>
